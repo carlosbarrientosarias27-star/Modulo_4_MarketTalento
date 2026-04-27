@@ -1,5 +1,5 @@
 # services/inventory/metrics.py
-from inventory.metrics.py import generate_recommendations
+from .recommender import generate_recommendations
 
 def calculate_inventory_metrics(detected_products, product_database):
     total_products = len(detected_products)
