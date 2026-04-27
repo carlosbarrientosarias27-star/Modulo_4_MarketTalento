@@ -422,6 +422,7 @@ def analizar_inventario():
 def obtener_productos():
     return jsonify({"status": "success", "total": len(get_all_products()), "productos": get_all_products()})
 
+
 # ============================================================
 # EJECUCIÓN
 # ============================================================

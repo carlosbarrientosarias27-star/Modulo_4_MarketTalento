@@ -1,6 +1,9 @@
 # ============================================================
 # codigoInicio.py - SISTEMA DE INVENTARIO INTELIGENTE
-# Versión unificada con DASHBOARD DE ENDPOINTS
+# Versión unificada para alumnos - SIN creación automática de archivos
+# ============================================================
+# Los alumnos deben refactorizar este código en módulos separados
+# NO genera archivos automáticamente al ejecutarse
 # ============================================================
 
 import random
@@ -246,7 +249,7 @@ def predict_stock_outage(sales_history, current_stock, product_info=None):
     }
 
 # ============================================================
-# TEMPLATE HTML CON BOTONES PARA CADA ENDPOINT
+# TEMPLATES HTML (embebidos como cadenas)
 # ============================================================
 
 HTML_TEMPLATE = '''
@@ -262,9 +265,7 @@ HTML_TEMPLATE = '''
         body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
         .card { border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 20px; border: none; }
         .card-header { background: linear-gradient(45deg, #667eea, #764ba2); color: white; border-radius: 15px 15px 0 0 !important; }
-        .btn-api { margin: 5px; border-radius: 20px; }
-        .endpoint-url { font-family: monospace; font-size: 0.8em; color: #666; }
-        .response-area { background: #1e1e1e; color: #d4d4d4; padding: 15px; border-radius: 10px; font-family: monospace; font-size: 12px; overflow-x: auto; max-height: 400px; }
+        .btn-primary { background: linear-gradient(45deg, #667eea, #764ba2); border: none; }
         .stat-card { text-align: center; padding: 20px; border-radius: 10px; color: white; }
         .loading { display: none; text-align: center; padding: 20px; }
     </style>
@@ -275,10 +276,18 @@ HTML_TEMPLATE = '''
             <h1 class="text-white">📦 Sistema de Inventario Inteligente</h1>
             <p class="text-white-50">Análisis con Visión Artificial y Predicción de Demanda</p>
         </div>
-        
         <div class="row">
-            <!-- Panel izquierdo: Botones de API -->
-            <div class="col-md-4 mb-4">
+            <div class="col-md-3 mb-4">
+                <div class="card">
+                    <div class="card-header"><h5 class="mb-0">📊 Panel de Control</h5></div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="location.href='/'">🏠 Inicio</button>
+                            <button class="btn btn-success" onclick="analizarInventario()">🔍 Analizar Inventario</button>
+                            <button class="btn btn-info" onclick="verProductos()">📦 Ver Productos</button>
+                        </div>
+                    </div>
+                </div>
                 <div class="card">
                     <div class="card-header">
                         <h5 class="mb-0">🔌 Endpoints de la API</h5>
@@ -309,30 +318,21 @@ HTML_TEMPLATE = '''
                         </div>
                     </div>
                 </div>
-                
-                <!-- Tarjeta de información del sistema -->
-                <div class="card mt-3">
-                    <div class="card-header">
-                        <h5 class="mb-0">ℹ️ Información del Sistema</h5>
-                    </div>
+            </div>
+            <div class="col-md-9">
+                <div class="card">
+                    <div class="card-header"><h5 class="mb-0">Panel Principal</h5></div>
                     <div class="card-body">
-                        <p><i class="fas fa-camera"></i> <strong>Visión Artificial:</strong> Detecta productos en imágenes (simulado)</p>
-                        <p><i class="fas fa-chart-line"></i> <strong>Predicción:</strong> Estima fecha de agotamiento</p>
-                        <p><i class="fas fa-lightbulb"></i> <strong>Recomendación:</strong> Sugiere cantidades de reposición</p>
-                        <hr>
-                        <p><strong>Flujo del Sistema:</strong></p>
-                        <ol class="small">
-                            <li>Captura de imagen</li>
-                            <li>Detección de productos</li>
-                            <li>Análisis de stock</li>
-                            <li>Predicción de demanda</li>
-                            <li>Recomendaciones</li>
-                            <li>Dashboard interactivo</li>
-                        </ol>
+                        <div id="loading" class="loading"><div class="spinner-border text-primary"></div><p>Procesando...</p></div>
+                        <div id="content">
+                            <div class="text-center">
+                                <i class="fas fa-robot" style="font-size: 4em; color: #667eea;"></i>
+                                <h3>Bienvenido</h3>
+                                <p>Haz clic en "Analizar Inventario" para comenzar</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
             <!-- Panel derecho: Resultados -->
             <div class="col-md-8">
                 <div class="card">
@@ -350,9 +350,9 @@ HTML_TEMPLATE = '''
                     </div>
                 </div>
             </div>
+            </div>
         </div>
     </div>
-    
     <script>
         function callAPI(url) {
             document.getElementById('loading').style.display = 'block';
@@ -374,14 +374,48 @@ HTML_TEMPLATE = '''
                         '<div class="alert alert-danger">❌ Error: ' + error + '</div>';
                 });
         }
-        
-        // Función para analizar inventario y mostrar en formato amigable
         function analizarInventario() {
-            callAPI('/api/analizar-inventario');
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('content').innerHTML = '<p class="text-center">🔍 Analizando inventario...</p>';
+            fetch('/api/analizar-inventario')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    let html = '<div class="alert alert-success">✅ Análisis completado</div>';
+                    if (data.resumen) {
+                        html += '<div class="row mb-4">' +
+                            '<div class="col-md-4"><div class="stat-card bg-primary"><i class="fas fa-boxes"></i><h3>' + data.resumen.total_productos + '</h3><p>Productos Analizados</p></div></div>' +
+                            '<div class="col-md-4"><div class="stat-card bg-danger"><i class="fas fa-exclamation-triangle"></i><h3>' + (data.resumen.productos_criticos || 0) + '</h3><p>Productos Críticos</p></div></div>' +
+                            '<div class="col-md-4"><div class="stat-card bg-success"><i class="fas fa-dollar-sign"></i><h3>$' + (data.valor_inventario || 0) + '</h3><p>Valor Inventario</p></div></div>' +
+                            '</div>';
+                    }
+                    if (data.productos && data.productos.length > 0) {
+                        html += '<h5>📋 Detalle de Productos</h5><div class="table-responsive"><table class="table table-striped"><thead><tr><th>Producto</th><th>Stock</th><th>Días hasta agotarse</th><th>Estado</th></tr></thead><tbody>';
+                        for (let p of data.productos) {
+                            html += `<tr><td>${p.producto}</td><td>${p.stock_actual}</td><td>${p.prediccion?.dias_hasta_agotarse || 'N/A'}</td><td>${p.prediccion?.estado || 'Desconocido'}</td></tr>`;
+                        }
+                        html += '</tbody></table></div>';
+                    }
+                    document.getElementById('content').innerHTML = html;
+                })
+                .catch(error => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('content').innerHTML = '<div class="alert alert-danger">Error: ' + error + '</div>';
+                });
         }
-        
         function verProductos() {
-            callAPI('/api/productos');
+            document.getElementById('loading').style.display = 'block';
+            fetch('/api/productos')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('loading').style.display = 'none';
+                    if (data.productos) {
+                        let html = '<h5>📦 Catálogo de Productos</h5><table class="table"><thead><tr><th>Nombre</th><th>Categoría</th><th>Precio</th></tr></thead><tbody>';
+                        for (let p of data.productos) html += `<tr><td>${p.nombre}</td><td>${p.categoria}</td><td>$${p.precio}</td></tr>`;
+                        html += '</tbody></table>';
+                        document.getElementById('content').innerHTML = html;
+                    }
+                });
         }
     </script>
 </body>
@@ -405,8 +439,6 @@ def test_api():
         "timestamp": datetime.now().isoformat(),
         "servicios": ["vision", "database", "prediction", "inventory"]
     })
-
-
 
 @app.route('/api/analizar-inventario')
 def analizar_inventario():
@@ -442,7 +474,6 @@ def analizar_inventario():
     
     return jsonify({
         "status": "success",
-        "timestamp": datetime.now().isoformat(),
         "deteccion": deteccion,
         "productos": productos_analizados,
         "analisis": analisis,
@@ -479,6 +510,7 @@ def obtener_recomendaciones():
         })
     return jsonify({"status": "success", "recomendaciones": recomendaciones, "total": len(recomendaciones)})
 
+
 # ============================================================
 # EJECUCIÓN
 # ============================================================
@@ -487,14 +519,7 @@ if __name__ == '__main__':
     print("=" * 60)
     print("📦 SISTEMA DE INVENTARIO INTELIGENTE - VERSIÓN UNIFICADA")
     print("=" * 60)
-    print("📌 Endpoints disponibles:")
-    print("   GET /api/test")
-    print("   GET /api/analizar-inventario")
-    print("   GET /api/productos")
-    print("   GET /api/producto/<nombre>")
-    print("   GET /api/recomendaciones")
-    print("=" * 60)
-    print("🌐 Abre en tu navegador: http://localhost:5002")
+    print("🌐 Servidor disponible en: http://localhost:5020")
     print("📝 Presiona Ctrl+C para detener")
     print("=" * 60)
-    app.run(debug=True, port=5002, host='0.0.0.0', threaded=True)
+    app.run(debug=True, port=5020, host='0.0.0.0', threaded=True)
