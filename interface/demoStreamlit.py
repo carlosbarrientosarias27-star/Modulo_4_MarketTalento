@@ -1,146 +1,24 @@
-# ============================================================
-# codigoInicio.py - SISTEMA DE INVENTARIO INTELIGENTE
-# Versión unificada para alumnos - SIN creación automática de archivos
-# ============================================================
-# Los alumnos deben refactorizar este código en módulos separados
-# NO genera archivos automáticamente al ejecutarse
-# ============================================================
+# interface/demoStreamlit.py
 
-import random
-import statistics
-from datetime import datetime, timedelta
+import sys
+import os
+
+
+# Añade la carpeta raíz del proyecto al PATH de Python
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
+
 from flask import Flask, jsonify, render_template_string
+from datetime import datetime, timedelta
+from services.vision.detector import detect_products
+from services.inventory.metrics import calculate_inventory_metrics
+from services.inventory.valuation import calculate_inventory_value
+from services.database.db_reader import get_product_info, get_all_products
+from services.database.db_filter import get_sales_history
+from services.prediction.stock_predictor import predict_stock_outage 
 from services.database.product_db import product_database 
-from services.database.db_reader import get_product_info, get_all_products 
-from services.database.db_filter import get_sales_history 
 
-app = Flask(__name__)
-
-
-# ============================================================
-# SERVICIO DE VISIÓN ARTIFICIAL (simulado)
-# ============================================================
-
-def detect_products(image_path=None):
-    print("📸 Analizando imagen para detección de productos...")
-    escenarios = [
-        {"descripcion": "Estantería de supermercado - Stock moderado", "productos": [
-            {"nombre": "Leche", "cantidad": 8, "confianza": 0.92},
-            {"nombre": "Huevos", "cantidad": 5, "confianza": 0.88},
-            {"nombre": "Pan", "cantidad": 3, "confianza": 0.85},
-            {"nombre": "Agua", "cantidad": 12, "confianza": 0.95},
-            {"nombre": "Café", "cantidad": 6, "confianza": 0.90}
-        ]},
-        {"descripcion": "Almacén de tienda - Stock alto", "productos": [
-            {"nombre": "Arroz", "cantidad": 25, "confianza": 0.94},
-            {"nombre": "Leche", "cantidad": 18, "confianza": 0.91},
-            {"nombre": "Huevos", "cantidad": 22, "confianza": 0.89},
-            {"nombre": "Agua", "cantidad": 30, "confianza": 0.96},
-            {"nombre": "Café", "cantidad": 15, "confianza": 0.87}
-        ]},
-        {"descripcion": "Nevera comercial - Stock bajo", "productos": [
-            {"nombre": "Yogur", "cantidad": 4, "confianza": 0.83},
-            {"nombre": "Queso", "cantidad": 2, "confianza": 0.80},
-            {"nombre": "Mantequilla", "cantidad": 3, "confianza": 0.82},
-            {"nombre": "Zumo", "cantidad": 5, "confianza": 0.86},
-            {"nombre": "Fiambre", "cantidad": 1, "confianza": 0.78}
-        ]}
-    ]
-    escenario = random.choice(escenarios)
-    print(f"✅ Detección simulada: {escenario['descripcion']}")
-    return escenario
-
-# ============================================================
-# SERVICIO DE INVENTARIO
-# ============================================================
-
-def calculate_inventory_metrics(detected_products, product_database):
-    total_products = len(detected_products)
-    total_units = sum(p["cantidad"] for p in detected_products)
-    
-    critical_products = []
-    low_stock_products = []
-    adequate_products = []
-    
-    for detected in detected_products:
-        product_name = detected["nombre"]
-        current_stock = detected["cantidad"]
-        product_info = product_database.get(product_name)
-        
-        if product_info:
-            min_stock = product_info.get("stock_minimo", 5)
-            if current_stock == 0:
-                critical_products.append({"producto": product_name, "stock_actual": current_stock, "stock_minimo": min_stock, "estado": "AGOTADO ❌"})
-            elif current_stock < min_stock:
-                low_stock_products.append({"producto": product_name, "stock_actual": current_stock, "stock_minimo": min_stock, "estado": "BAJO ⚠️"})
-            else:
-                adequate_products.append({"producto": product_name, "stock_actual": current_stock, "stock_minimo": min_stock, "estado": "ADEQUADO ✅"})
-    
-    return {
-        "resumen": {
-            "total_productos": total_products,
-            "total_unidades": total_units,
-            "productos_criticos": len(critical_products),
-            "productos_bajos": len(low_stock_products),
-            "productos_adecuados": len(adequate_products),
-        },
-        "recomendaciones": generate_recommendations(critical_products + low_stock_products)
-    }
-
-def generate_recommendations(products_needing_attention):
-    recommendations = []
-    for product in products_needing_attention:
-        producto = product["producto"]
-        stock_actual = product["stock_actual"]
-        stock_minimo = product.get("stock_minimo", 5)
-        if stock_actual == 0:
-            rec = f"🔄 Reponer urgentemente {producto}. Stock agotado."
-        else:
-            rec = f"📦 Reponer {stock_minimo * 2 - stock_actual} unidades de {producto}. Stock bajo."
-        recommendations.append({"producto": producto, "recomendacion": rec, "prioridad": "ALTA" if stock_actual == 0 else "MEDIA"})
-    return recommendations
-
-def calculate_inventory_value(detected_products, product_database):
-    total_value = 0
-    for detected in detected_products:
-        product_info = product_database.get(detected["nombre"])
-        if product_info and "precio" in product_info:
-            total_value += detected["cantidad"] * product_info["precio"]
-    return round(total_value, 2)
-
-# ============================================================
-# SERVICIO DE PREDICCIÓN
-# ============================================================
-
-def predict_stock_outage(sales_history, current_stock, product_info=None):
-    if not sales_history or current_stock <= 0:
-        return {"dias_hasta_agotarse": 0, "cantidad_recomendada": 10, "estado": "AGOTADO" if current_stock <= 0 else "SIN HISTORIAL"}
-    
-    avg_daily_sales = sum(sales_history) / len(sales_history)
-    if len(sales_history) >= 5:
-        recent_avg = sum(sales_history[-5:]) / 5
-        trend_factor = recent_avg / avg_daily_sales if avg_daily_sales > 0 else 1
-        adjusted_daily = avg_daily_sales * trend_factor
-    else:
-        adjusted_daily = avg_daily_sales
-    
-    days_until_out = max(0, min(90, round(current_stock / adjusted_daily, 1))) if adjusted_daily > 0 else 999
-    
-    if days_until_out <= 2:
-        estado = "CRÍTICO ⚠️"
-    elif days_until_out <= 5:
-        estado = "BAJO ⚠️"
-    elif days_until_out <= 10:
-        estado = "MODERADO ℹ️"
-    else:
-        estado = "ADEQUADO ✅"
-    
-    return {
-        "dias_hasta_agotarse": days_until_out,
-        "cantidad_recomendada": round(avg_daily_sales * 10),
-        "estado": estado,
-        "consumo_promedio_diario": round(adjusted_daily, 2)
-    }
+app = Flask(__name__) 
 
 # ============================================================
 # TEMPLATES HTML (embebidos como cadenas)
@@ -316,6 +194,7 @@ HTML_TEMPLATE = '''
 </html>
 '''
 
+
 # ============================================================
 # RUTAS DE LA APLICACIÓN
 # ============================================================
@@ -403,7 +282,6 @@ def obtener_recomendaciones():
             "motivo": f"Producto con historial de {len(producto['historial_ventas'])} días"
         })
     return jsonify({"status": "success", "recomendaciones": recomendaciones, "total": len(recomendaciones)})
-
 
 # ============================================================
 # EJECUCIÓN
