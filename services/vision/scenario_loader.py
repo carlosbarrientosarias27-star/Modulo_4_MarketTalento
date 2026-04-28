@@ -16,10 +16,10 @@ def load_scenarios():
             {"nombre": "Café Molido", "cantidad": 15, "confianza": 0.87}
         ]},
         {"descripcion": "Nevera comercial - Stock bajo", "productos": [
-            {"nombre": "Yogur", "cantidad": 4, "confianza": 0.83},
-            {"nombre": "Queso", "cantidad": 2, "confianza": 0.80},
+            {"nombre": "Yogur Natural", "cantidad": 4, "confianza": 0.83},
+            {"nombre": "Queso Fresco", "cantidad": 2, "confianza": 0.80},
             {"nombre": "Mantequilla", "cantidad": 3, "confianza": 0.82},
-            {"nombre": "Zumo", "cantidad": 5, "confianza": 0.86},
-            {"nombre": "Fiambre", "cantidad": 1, "confianza": 0.78}
+            {"nombre": "Zumo de Naranja UHT", "cantidad": 5, "confianza": 0.86},
+            {"nombre": "Fiambre Pavo", "cantidad": 1, "confianza": 0.78}
         ]}
     ]
