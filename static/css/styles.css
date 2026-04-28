@@ -1,0 +1,84 @@
+/* static/css/styles.css */
+
+/* Configuración General y Fondo Degradado */
+body { 
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+    min-height: 100vh; 
+    padding: 20px; 
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Tarjetas (Cards) Modernas */
+.card { 
+    border-radius: 15px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15); 
+    margin-bottom: 20px; 
+    border: none; 
+    overflow: hidden; /* Para que el header respete los bordes redondeados */
+}
+
+.card-header { 
+    background: linear-gradient(45deg, #667eea, #764ba2); 
+    color: white; 
+    font-weight: bold;
+    border-bottom: none;
+}
+
+/* Botones Personalizados */
+.btn-primary { 
+    background: linear-gradient(45deg, #667eea, #764ba2); 
+    border: none; 
+    transition: transform 0.2s;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+/* Tarjetas de Estadísticas (Dashboard) */
+.stat-card { 
+    text-align: center; 
+    padding: 25px; 
+    border-radius: 12px; 
+    color: white; 
+    margin-bottom: 15px;
+}
+
+.stat-card h3 {
+    font-size: 2.2rem;
+    margin: 10px 0;
+}
+
+/* Estados de Carga */
+.loading { 
+    display: none; 
+    text-align: center; 
+    padding: 30px; 
+}
+
+/* Área de respuesta JSON (Debug) */
+.response-area {
+    background: #272c34;
+    color: #abb2bf;
+    padding: 15px;
+    border-radius: 8px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 0.9rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.response-area pre {
+    margin: 0;
+    color: #e06c75; /* Color para resaltar el texto del JSON */
+}
+
+/* Tablas */
+.table {
+    margin-top: 15px;
+}
+
+.table thead {
+    background-color: #f8f9fa;
+}
