@@ -25,4 +25,4 @@ if __name__ == '__main__':
     print("🌐 Servidor disponible en: http://localhost:5020")
     print("📝 Presiona Ctrl+C para detener")
     print("=" * 60)
-    app.run(debug=False, port=5020, host='0.0.0.0', threaded=True) 
+    app.run(debug=False, port=5020, host='127.0.0.1', threaded=True) 
