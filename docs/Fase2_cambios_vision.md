@@ -30,5 +30,15 @@ El simulador de visión no solo entrega cantidades, sino también un valor de co
 Ignorar detecciones dudosas (confianza < 0.70).
 Solicitar una "segunda revisión" humana si la confianza es baja.5. 
 
-Próximos Pasos: Fase 3
-Una vez estabilizada la visión, la siguiente fase consistirá en:Extraer la Lógica de Predicción (predict_stock_outage) de app.py hacia services/inventory/prediction.py.Implementar alertas automáticas basadas en los días estimados para el agotamiento del stock.Referencias de Archivos Analizados:services/vision/detector.py: Lógica de orquestación de visión.services/vision/scenario_loader.py: Repositorio de escenarios simulados.services/database/product_db.py: Maestro de productos de la Fase 1.app.py: Punto de entrada y controlador de rutas.
+5. Próximos Pasos: Fase 3
+Una vez estabilizada la visión, la siguiente fase consistirá en:
+
+Extraer la Lógica de Predicción (predict_stock_outage) de app.py hacia services/inventory/prediction.py.
+Implementar alertas automáticas basadas en los días estimados para el agotamiento del stock.
+
+Referencias de Archivos Analizados:
+
+services/vision/detector.py: Lógica de orquestación de visión.
+services/vision/scenario_loader.py: Repositorio de escenarios simulados.
+services/database/product_db.py: Maestro de productos de la Fase 1.
+app.py: Punto de entrada y controlador de rutas.
