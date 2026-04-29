@@ -44,11 +44,11 @@ if st.button('🔍 Analizar Inventario'):
     filas = []
     
     for p in productos:
-        # 1. Extract name and stock from the detected product[cite: 4]
+        # 1. Extract name and stock from the detected product
         nombre = p['nombre']
         stock_actual = p['cantidad']
     
-        # 2. Retrieve product info and sales history from the database[cite: 4]
+        # 2. Retrieve product info and sales history from the database
         # We use .get() to avoid errors if the product isn't in the DB
         info_producto = product_database.get(nombre, {})
         historial_ventas = info_producto.get('ventas', []) 
@@ -56,21 +56,37 @@ if st.button('🔍 Analizar Inventario'):
         # 3. Call the predictor with the correct THREE arguments
         pred = predict_stock_outage(historial_ventas, stock_actual, info_producto)
     
-        estado_pred = pred.get('estado', 'Normal')[cite: 4]
-    
-        # 4. Generate recommendation[cite: 4]
-        rec = generate_recommendations([pred])[0]['accion'] if estado_pred != 'Normal' else 'OK'[cite: 4]
-    
+        # ADD THIS LINE: Ensure the 'producto' key exists for the recommender
+        pred['producto'] = nombre
+        pred['stock_actual'] = stock_actual
+
+        # FIX: Define estado_pred here, inside the loop
+        estado_pred = pred.get('estado', 'Normal')
+
+        # 4. Generate recommendation safely
+        if estado_pred != 'Normal':
+            # Get the recommendation list
+            # Now [pred] contains the 'producto' key required by recommender.py
+            recommendations = generate_recommendations([pred])
+        
+            # Verify the list isn't empty and the key exists
+            if recommendations and len(recommendations) > 0:
+                rec = recommendations[0].get('accion', 'Acción no definida')
+            else:
+                rec = 'Sin recomendación disponible'
+        else:
+            rec = 'OK'
+
         filas.append({
-            "Producto": nombre,[cite: 4]
-            "Stock Actual": stock_actual,[cite: 4]
-            "Estado": estado_pred,[cite: 4]
-            "Días hasta Agotarse": pred.get('dias_hasta_agotarse', 'N/A'),[cite: 4]
-            "Recomendación": rec[cite: 4]
+            "Producto": nombre,
+            "Stock Actual": stock_actual,
+            "Estado": estado_pred,
+            "Días hasta Agotarse": pred.get('dias_hasta_agotarse', 'N/A'),
+            "Recomendación": rec
     })
 
-    df = pd.DataFrame(filas)[cite: 4]
-    st.dataframe(df, use_container_width=True)[cite: 4]
+    df = pd.DataFrame(filas)
+    st.dataframe(df, use_container_width=True)
     st.markdown("---")
 
 # --- Sección C — Recomendaciones y Valor del Inventario ---
