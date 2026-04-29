@@ -40,4 +40,19 @@ Para cada producto, llamaremos a predict_stock_outage de tu predictor para mostr
 Recomendaciones: Un área de alertas con los consejos del recommender.
 
 
+## Primeros errores 
 
+KeyError: 'cantidad_recommended'
+
+File "C:\Users\IA\Documents\GitHub\Modulo_4_MarketTalento\interface\demoStreamlit.py", line 86, in <module>
+    "Sugerencia Compra": prediccion['cantidad_recommended'] if stock_actual < info_base.get('stock_minimo', 0) else 0
+                         ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+lo cambiamos a "cantidad_recommendada"
+
+--- 
+# Cambia esto:
+st.dataframe(df.style.applymap(color_estado, subset=['Estado']), use_container_width=True)
+
+# Por esto (más moderno):
+st.dataframe(df.style.map(color_estado, subset=['Estado']), use_container_width=True)
+--- 

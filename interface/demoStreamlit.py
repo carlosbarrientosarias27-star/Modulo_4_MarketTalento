@@ -83,7 +83,7 @@ if st.session_state.scan_data:
             "Mín. Requerido": info_base.get('stock_minimo', 0),
             "Días Restantes": prediccion['dias_hasta_agotarse'],
             "Estado": prediccion['estado'],
-            "Sugerencia Compra": prediccion['cantidad_recommended'] if stock_actual < info_base.get('stock_minimo', 0) else 0
+            "Sugerencia Compra": prediccion['cantidad_recommendada'] if stock_actual < info_base.get('stock_minimo', 0) else 0
         })
     
     df = pd.DataFrame(tabla_data)
@@ -95,7 +95,7 @@ if st.session_state.scan_data:
         if "ADEQUADO" in str(val): return 'background-color: #ccffcc'
         return ''
 
-    st.dataframe(df.style.applymap(color_estado, subset=['Estado']), use_container_width=True)
+    st.dataframe(df.style.map(color_estado, subset=['Estado']), use_container_width=True)
 
     # --- SECCIÓN 3: RECOMENDACIONES ---
     with st.expander("💡 Recomendaciones de Reposición"):
