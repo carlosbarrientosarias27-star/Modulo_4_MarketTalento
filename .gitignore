@@ -1,5 +1,16 @@
-__pycache__
-.env
-.venv
+# Bases de datos (usa el nombre exacto que sale en tu VS Code)
+services/database/inventario.db
+
+# Python y Cache
+__pycache__/
 __init__.py
-.covarage 
+
+# Entornos virtuales
+.env
+.venv/
+env/
+venv/
+
+# Cobertura
+.coverage
+htmlcov/

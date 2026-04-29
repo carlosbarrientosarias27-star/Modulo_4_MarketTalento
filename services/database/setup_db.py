@@ -10,15 +10,23 @@ def inicializar_sqlite():
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
-    # Crear tabla con la estructura de tu product_db.py
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS productos (
+    # 1. ELIMINAR LA TABLA SI YA EXISTE (Esto evita tu error actual)
+    cursor.execute('DROP TABLE IF EXISTS productos')
+
+    # 2. CREAR LA TABLA CON LA NUEVA ESTRUCTURA
+    cursor.execute ('''
+        CREATE TABLE productos (
             id TEXT PRIMARY KEY,
             nombre TEXT NOT NULL,
-            categoria TEXT,
+            categoria TEXT CHECK(categoria IN (
+                'Refrigerados', 'Conservas', 'Bebidas', 
+                'Panadería', 'Despensa', 'Alimentos Básicos', 
+                'Snacks', 'Desayuno'
+            )),
             precio REAL,
             unidad TEXT,
             stock_minimo INTEGER,
+            stock_actual INTEGER,
             stock_maximo INTEGER,
             tiempo_reposicion INTEGER,
             historial_ventas TEXT
@@ -27,15 +35,21 @@ def inicializar_sqlite():
 
     # Insertar los 27 productos
     for nombre, info in product_database.items():
-        # Convertimos la lista de ventas a JSON para guardarla como texto
-        ventas_json = json.dumps(info['historial_ventas'])
+        ventas_json = json.dumps(info.get('historial_ventas', []))
         
         cursor.execute('''
-            INSERT OR REPLACE INTO productos VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO productos VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            info['id'], info['nombre'], info['categoria'], info['precio'],
-            info['unidad'], info['stock_minimo'], info['stock_maximo'],
-            info['tiempo_reposicion'], ventas_json
+            info['id'], 
+            info['nombre'], 
+            info['categoria'], 
+            info['precio'],
+            info['unidad'], 
+            info['stock_minimo'], 
+            info.get('stock_actual', 0), # Añadido para coincidir con la imagen
+            info['stock_maximo'],
+            info['tiempo_reposicion'], 
+            ventas_json
         ))
 
     conn.commit()

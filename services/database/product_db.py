@@ -1,7 +1,7 @@
 # services/database/product_db.py 
 
 product_database = {
-    # --- CATEGORÍA: REFRIGERADOS (FRÍO) ---
+    # --- CATEGORÍA: Refrigerados (Frío) ---
     "Leche Entera": {
         "id": "PROD001", "nombre": "Leche Entera", "categoria": "Refrigerados",
         "precio": 1.20, "unidad": "litro", "stock_minimo": 5,
@@ -83,7 +83,7 @@ product_database = {
         "historial_ventas": [4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5, 4, 5]
     },
 
-    # --- CATEGORÍA: BEBIDAS ---
+    # --- CATEGORÍA: Bebidas ---
     "Agua Mineral": {
         "id": "PROD014", "nombre": "Agua Mineral", "categoria": "Bebidas",
         "precio": 0.60, "unidad": "botella", "stock_minimo": 15,
@@ -115,7 +115,7 @@ product_database = {
         "historial_ventas": [6, 8, 7, 9, 6, 8, 7, 9, 6, 8, 7, 9, 6, 8, 7, 9, 6, 8, 7, 9]
     },
 
-    # --- CATEGORÍA: PANADERÍA ---
+    # --- CATEGORÍA: Panadería ---
     "Pan de Molde": {
         "id": "PROD019", "nombre": "Pan de Molde", "categoria": "Panadería",
         "precio": 1.40, "unidad": "paquete", "stock_minimo": 10,
@@ -135,27 +135,27 @@ product_database = {
         "historial_ventas": [6, 8, 7, 9, 6, 8, 7, 9, 6, 8, 7, 9, 6, 8, 7, 9, 6, 8, 7, 9]
     },
 
-    # --- CATEGORÍA: DESPENSA / ALIMENTOS BÁSICOS ---
+    # --- CATEGORÍA: Despensa / Alimentos Básiccos ---
     "Arroz": {
-        "id": "PROD022", "nombre": "Arroz", "categoria": "Alimentos básicos",
+        "id": "PROD022", "nombre": "Arroz", "categoria": "Alimentos Básicos",
         "precio": 1.80, "unidad": "kg", "stock_minimo": 10,
         "stock_maximo": 60, "tiempo_reposicion": 4,
         "historial_ventas": [3, 4, 3, 5, 4, 3, 4, 5, 3, 4, 5, 3, 4, 3, 5, 4, 3, 4, 3, 5]
     },
     "Aceite de Oliva": {
-        "id": "PROD023", "nombre": "Aceite de Oliva", "categoria": "Aceites",
+        "id": "PROD023", "nombre": "Aceite de Oliva", "categoria": "Despensa",
         "precio": 4.20, "unidad": "litro", "stock_minimo": 8,
         "stock_maximo": 40, "tiempo_reposicion": 4,
         "historial_ventas": [2, 3, 2, 4, 3, 2, 3, 2, 4, 3, 2, 3, 2, 4, 3, 2, 3, 4, 2, 3]
     },
     "Azúcar": {
-        "id": "PROD024", "nombre": "Azúcar", "categoria": "Alimentos básicos",
+        "id": "PROD024", "nombre": "Azúcar", "categoria": "Alimentos Básicos",
         "precio": 1.50, "unidad": "kg", "stock_minimo": 10,
         "stock_maximo": 50, "tiempo_reposicion": 3,
         "historial_ventas": [4, 5, 4, 6, 5, 4, 5, 6, 4, 5, 6, 4, 5, 4, 6, 5, 4, 5, 4, 6]
     },
     "Harina de Trigo": {
-        "id": "PROD025", "nombre": "Harina de Trigo", "categoria": "Alimentos básicos",
+        "id": "PROD025", "nombre": "Harina de Trigo", "categoria": "Alimentos Básicos",
         "precio": 1.20, "unidad": "kg", "stock_minimo": 10,
         "stock_maximo": 60, "tiempo_reposicion": 3,
         "historial_ventas": [3, 4, 3, 5, 4, 3, 4, 5, 3, 4, 5, 3, 4, 3, 5, 4, 3, 4, 3, 5]

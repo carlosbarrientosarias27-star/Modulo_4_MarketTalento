@@ -26,7 +26,7 @@ if st.button('🔍 Analizar Inventario'):
     deteccion = detect_products()
     productos = deteccion['productos']
 
-# --- Sección A — Resultados del Análisis (Métricas) ---
+    # --- Sección A — Resultados del Análisis (Métricas) ---
     # 1. Preparamos los datos de la DB para que la función no falle
     # Añadimos una cantidad por defecto (ej. stock_maximo) para que pueda calcular
     full_db_con_stock = []
@@ -57,57 +57,57 @@ if st.button('🔍 Analizar Inventario'):
     filas = []
     
     # Mapeo para búsqueda rápida en la lista de SQLite
-db_lookup = {p['nombre']: p for p in todos_los_productos}
+    db_lookup = {p['nombre']: p for p in todos_los_productos}
 
-for p in productos:
-    # 1. Extraer nombre y stock detectado
-    nombre = p['nombre']
-    stock_actual = p['cantidad']
+    for p in productos:
+        # 1. Extraer nombre y stock detectado
+        nombre = p['nombre']
+        stock_actual = p['cantidad']
 
-    # 2. Obtener info de la base de datos
-    info_producto = db_lookup.get(nombre, {}) 
-    stock_maximo = info_producto.get('stock_maximo', stock_actual)
-    sugerencia_cantidad = max(0, stock_maximo - stock_actual)
+        # 2. Obtener info de la base de datos
+        info_producto = db_lookup.get(nombre, {}) 
+        stock_maximo = info_producto.get('stock_maximo', stock_actual)
+        sugerencia_cantidad = max(0, stock_maximo - stock_actual)
     
-    # Si ya arreglaste db_reader.py, esto ya vendrá como lista
-    historial_ventas = info_producto.get('historial_ventas', [])
+        # Si ya arreglaste db_reader.py, esto ya vendrá como lista
+        historial_ventas = info_producto.get('historial_ventas', [])
 
-    # 3. Llamar al predictor con los TRES argumentos
-    pred = predict_stock_outage(historial_ventas, stock_actual, info_producto)
-    
-     # ADD THIS LINE: Ensure the 'producto' key exists for the recommender
-    pred['producto'] = nombre
-    pred['stock_actual'] = stock_actual
-
-    # FIX: Define estado_pred here, inside the loop
-    estado_pred = pred.get('estado', 'Normal')
-
-    # 4. Generate recommendation safely
-    if estado_pred != 'Normal':
-            # Get the recommendation list
-            # Now [pred] contains the 'producto' key required by recommender.py
-            recommendations = generate_recommendations([pred])
+        # 3. Llamar al predictor con los TRES argumentos
+        pred = predict_stock_outage(historial_ventas, stock_actual, info_producto)
         
-            # Verify the list isn't empty and the key exists
-            if recommendations and len(recommendations) > 0:
-                rec = recommendations[0].get('accion', 'Acción no definida')
-            else:
-                rec = 'Sin recomendación disponible'
-    else:
-            rec = 'OK'
+        # ADD THIS LINE: Ensure the 'producto' key exists for the recommender
+        pred['producto'] = nombre
+        pred['stock_actual'] = stock_actual
 
-    filas.append({
-            "Producto": nombre,
-            "Stock Actual": stock_actual,
-            "Estado": estado_pred,
-            "Días hasta Agotarse": pred.get('dias_hasta_agotarse', 'N/A'),
-            "Recomendación": rec, 
-            "Sugerencia Compra": sugerencia_cantidad
-    })
+        # FIX: Define estado_pred here, inside the loop
+        estado_pred = pred.get('estado', 'Normal')
 
-    df = pd.DataFrame(filas)
-    st.dataframe(df, use_container_width=True)
-    st.markdown("---")
+        # 4. Generate recommendation safely
+        if estado_pred != 'Normal':
+                # Get the recommendation list
+                # Now [pred] contains the 'producto' key required by recommender.py
+                recommendations = generate_recommendations([pred])
+            
+                # Verify the list isn't empty and the key exists
+                if recommendations and len(recommendations) > 0:
+                    rec = recommendations[0].get('accion', 'Acción no definida')
+                else:
+                    rec = 'Sin recomendación disponible'
+        else:
+                rec = 'OK'
+
+        filas.append({
+                "Producto": nombre,
+                "Stock Actual": stock_actual,
+                "Estado": estado_pred,
+                "Días hasta Agotarse": pred.get('dias_hasta_agotarse', 'N/A'),
+                "Recomendación": rec, 
+                "Sugerencia Compra": sugerencia_cantidad
+        })
+
+        df = pd.DataFrame(filas)
+        st.dataframe(df, use_container_width=True)
+        st.markdown("---")
 
 # --- Sección C — Recomendaciones y Valor del Inventario ---
     col_rec, col_val = st.columns(2)

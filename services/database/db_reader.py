@@ -31,8 +31,16 @@ def get_all_products():
 def get_product_info(product_name):
     """Busca un producto específico por nombre."""
     conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row # <-- Añade esto para consistencia
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM productos WHERE nombre = ?", (product_name,))
     row = cursor.fetchone()
     conn.close()
-    return row # Retorna una tupla con los datos
+    
+    if row:
+        producto = dict(row)
+        # Procesar JSON igual que en get_all_products
+        if isinstance(producto['historial_ventas'], str):
+            producto['historial_ventas'] = json.loads(producto['historial_ventas'])
+        return producto
+    return None
