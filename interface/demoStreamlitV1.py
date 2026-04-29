@@ -1,13 +1,13 @@
+import json 
 import sys
 import os
 
 # Adds the parent directory to the path so it can find 'services'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-
 import streamlit as st
 import pandas as pd
-from services.database.product_db import product_database
+from services.database.db_reader import get_all_products 
 from services.vision.detector import detect_products
 from services.inventory.metrics import calculate_inventory_metrics 
 from services.inventory.valuation import calculate_inventory_value
@@ -18,6 +18,8 @@ from services.prediction.stock_predictor import predict_stock_outage
 st.set_page_config(page_title='Markettalento Inventario', page_icon='📦', layout='wide')
 st.title('📦 Sistema de Inventario — Markettalento')
 
+todos_los_productos = get_all_products()
+
 # Disparador del análisis
 if st.button('🔍 Analizar Inventario'):
     # 1. Procesamiento de datos mediante Visión Artificial
@@ -25,17 +27,28 @@ if st.button('🔍 Analizar Inventario'):
     productos = deteccion['productos']
 
 # --- Sección A — Resultados del Análisis (Métricas) ---
+    # 1. Preparamos los datos de la DB para que la función no falle
+    # Añadimos una cantidad por defecto (ej. stock_maximo) para que pueda calcular
+    full_db_con_stock = []
+    for p in todos_los_productos: 
+        p_copia = p.copy()
+        # Si el producto fue detectado por la cámara, usamos esa cantidad
+        # Si no, usamos 0 o su stock_maximo para la métrica
+        p_copia['cantidad'] = p_copia.get('cantidad', p_copia.get('stock_maximo', 0))
+        full_db_con_stock.append(p_copia)
+        
     # Calculamos las métricas antes de mostrarlas
-    metricas_full = calculate_inventory_metrics(productos, product_database)
+    metricas_full = calculate_inventory_metrics(full_db_con_stock, todos_los_productos)
 
     # Extraemos el diccionario de resumen para facilitar el acceso
     resumen = metricas_full['resumen']
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5= st.columns(5)
     col1.metric('Productos Detectados', resumen['total_productos'])
     col2.metric('Unidades Totales', resumen['total_unidades'])
     col3.metric('Productos Críticos', resumen['productos_criticos'])
     col4.metric('Stock Bajo', resumen['productos_bajos'])
+    col5.metric('Total DB', len(todos_los_productos))
 
     st.markdown("---")
 
@@ -43,28 +56,34 @@ if st.button('🔍 Analizar Inventario'):
     st.subheader('📊 Detalle del Análisis')
     filas = []
     
-    for p in productos:
-        # 1. Extract name and stock from the detected product
-        nombre = p['nombre']
-        stock_actual = p['cantidad']
-    
-        # 2. Retrieve product info and sales history from the database
-        # We use .get() to avoid errors if the product isn't in the DB
-        info_producto = product_database.get(nombre, {})
-        historial_ventas = info_producto.get('ventas', []) 
-    
-        # 3. Call the predictor with the correct THREE arguments
-        pred = predict_stock_outage(historial_ventas, stock_actual, info_producto)
-    
-        # ADD THIS LINE: Ensure the 'producto' key exists for the recommender
-        pred['producto'] = nombre
-        pred['stock_actual'] = stock_actual
+    # Mapeo para búsqueda rápida en la lista de SQLite
+db_lookup = {p['nombre']: p for p in todos_los_productos}
 
-        # FIX: Define estado_pred here, inside the loop
-        estado_pred = pred.get('estado', 'Normal')
+for p in productos:
+    # 1. Extraer nombre y stock detectado
+    nombre = p['nombre']
+    stock_actual = p['cantidad']
 
-        # 4. Generate recommendation safely
-        if estado_pred != 'Normal':
+    # 2. Obtener info de la base de datos
+    info_producto = db_lookup.get(nombre, {}) 
+    stock_maximo = info_producto.get('stock_maximo', stock_actual)
+    sugerencia_cantidad = max(0, stock_maximo - stock_actual)
+    
+    # Si ya arreglaste db_reader.py, esto ya vendrá como lista
+    historial_ventas = info_producto.get('historial_ventas', [])
+
+    # 3. Llamar al predictor con los TRES argumentos
+    pred = predict_stock_outage(historial_ventas, stock_actual, info_producto)
+    
+     # ADD THIS LINE: Ensure the 'producto' key exists for the recommender
+    pred['producto'] = nombre
+    pred['stock_actual'] = stock_actual
+
+    # FIX: Define estado_pred here, inside the loop
+    estado_pred = pred.get('estado', 'Normal')
+
+    # 4. Generate recommendation safely
+    if estado_pred != 'Normal':
             # Get the recommendation list
             # Now [pred] contains the 'producto' key required by recommender.py
             recommendations = generate_recommendations([pred])
@@ -74,15 +93,16 @@ if st.button('🔍 Analizar Inventario'):
                 rec = recommendations[0].get('accion', 'Acción no definida')
             else:
                 rec = 'Sin recomendación disponible'
-        else:
+    else:
             rec = 'OK'
 
-        filas.append({
+    filas.append({
             "Producto": nombre,
             "Stock Actual": stock_actual,
             "Estado": estado_pred,
             "Días hasta Agotarse": pred.get('dias_hasta_agotarse', 'N/A'),
-            "Recomendación": rec
+            "Recomendación": rec, 
+            "Sugerencia Compra": sugerencia_cantidad
     })
 
     df = pd.DataFrame(filas)
@@ -94,7 +114,7 @@ if st.button('🔍 Analizar Inventario'):
 
     with col_rec:
         st.subheader('🚨 Recomendaciones de Reposición')
-        alertas = df[df["Estado"].isin(["Crítico", "Bajo"])]
+        alertas = df[df["Estado"].str.upper().isin(["CRÍTICO", "BAJO"])]
         
         if not alertas.empty:
             for _, row in alertas.iterrows():
@@ -105,5 +125,5 @@ if st.button('🔍 Analizar Inventario'):
 
     with col_val:
         st.subheader('💰 Valor del Inventario')
-        valor = calculate_inventory_value(productos, product_database)
+        valor = calculate_inventory_value(productos, todos_los_productos)
         st.metric('Valor Total estimado', f'{valor:.2f} €')

@@ -1,11 +1,18 @@
 # services/database/db_filter.py 
-from .product_db import product_database
+import sqlite3
+import os
+import json
 
-def get_sales_history(product_name, days=20):
-    product = product_database.get(product_name)
-    if product:
-        return product["historial_ventas"][-days:] if days > 0 else product["historial_ventas"]
+DB_PATH = os.path.join(os.path.dirname(__file__), 'inventario.db')
+
+def get_sales_history(product_name):
+    """Obtiene el historial de ventas desde SQLite."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT historial_ventas FROM productos WHERE nombre = ?", (product_name,))
+    result = cursor.fetchone()
+    conn.close()
+    
+    if result:
+        return json.loads(result[0]) # Convertimos el JSON de vuelta a lista[cite: 1]
     return []
-
-def get_by_category(category):
-    return [p for p in product_database.values() if p["categoria"] == category]

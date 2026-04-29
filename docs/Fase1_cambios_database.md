@@ -51,3 +51,19 @@ Resultado esperado: Un JSON con el precio (1.20) y la categoría (Refrigerados) 
 - Archivo db_filter.py (Lógica de filtrado y ventas).
 - Archivo db_reader.py (Funciones de lectura de productos).
 - Archivo app.py (Código principal del sistema de inventario).
+
+## 6. Transición a SQLite3 (Infraestructura)
+Para garantizar la persistencia de datos y facilitar la integración con Streamlit, se migrará el diccionario `product_database` a un archivo `inventario.db`.
+
+- **Ubicación:** `services/database/inventario.db`
+- **Herramienta de migración:** `services/database/setup_db.py`
+- **Impacto:** Las funciones `get_product_info` y `get_sales_history` ahora realizarán consultas SQL.
+
+---
+
+Para cerrar este capítulo en tus archivos .md:
+
+docs/Fase1_cambios_database.md
+Validación de Diccionarios: Se confirmó que db_reader.py transforma las filas de SQLite en diccionarios nativos de Python para mantener la compatibilidad con los servicios de métricas.  
+
+Mapeo de Memoria: Se implementó la técnica de db_lookup para optimizar las búsquedas de productos, reduciendo la complejidad de los cálculos de inventario.
