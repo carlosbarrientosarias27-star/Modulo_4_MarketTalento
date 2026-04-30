@@ -13,6 +13,7 @@ from services.inventory.metrics import calculate_inventory_metrics
 from services.inventory.valuation import calculate_inventory_value
 from services.inventory.recommender import generate_recommendations
 from services.prediction.stock_predictor import predict_stock_outage
+from services.database.database_manager import guardar_producto_nuevo
 
 # Configuración inicial de la página
 st.set_page_config(page_title='Markettalento Inventario', page_icon='📦', layout='wide')
@@ -40,14 +41,15 @@ with col_btn1:
                 ]
                 categoria = st.selectbox("Categoría", lista_categorias)
                 precio = st.number_input("Precio de Venta (€)", min_value=0.0, format="%.2f")
-                unidad = st.text_input("Unidad de medida", value="unidad")
+                unidad_medida = st.text_input("Unidad de medida", placeholder="Ej: kg, Litros, Pack")
             with col_b:
-                stock_actual_n = st.number_input("Stock Actual", min_value=0, step=1)
+                stock_actual = st.number_input("Stock Actual", value=0, disabled=True)
                 stock_minimo_n = st.number_input("Stock Mínimo", min_value=0, step=1)
                 stock_maximo_n = st.number_input("Stock Máximo", min_value=0, step=1)
                 t_reposicion_n = st.number_input("Tiempo de Reposición (Días)", min_value=1, step=1)
             
-            historial_raw = st.text_input("Historial de Ventas (ej: 10, 15)", value="0")
+            historial_raw = st.text_input("Historial de Ventas (ej: 10, 15)", value="[]", 
+    disabled=True, help="El historial se iniciará vacío para productos nuevos.")
             submit_button = st.form_submit_button("Guardar Producto")
 
             if submit_button:
@@ -56,6 +58,30 @@ with col_btn1:
                     st.success(f"✅ Producto **{nombre_nuevo}** guardado correctamente.")
                 except ValueError:
                     st.error("❌ El historial debe ser números separados por comas.")
+
+            if submit_button:
+                if not nombre_nuevo:
+                    st.error("❌ El nombre del producto es obligatorio.")
+                else:
+                    # 1. Empaquetamos los datos para la función de base de datos
+                    datos = {
+                        'nombre': nombre_nuevo,
+                        'categoria': categoria,
+                        'precio': precio,
+                        'unidad': unidad_medida,
+                        'min': stock_minimo_n,
+                        'actual': stock_actual,
+                        'max': stock_maximo_n,
+                        'reposicion': t_reposicion_n
+                    }
+                    
+                    # 2. Llamamos a la función que creamos en database_manager.py
+                    if guardar_producto_nuevo(datos):
+                        st.success(f"✅ Producto **{nombre_nuevo}** guardado en inventario.db")
+                        st.rerun() 
+                    else:
+                        st.error("❌ Error al intentar guardar en la base de datos. Verifica la conexión.")
+                        
 
 with col_btn2:
     # --- BOTÓN DE ANÁLISIS (DERECHA) ---

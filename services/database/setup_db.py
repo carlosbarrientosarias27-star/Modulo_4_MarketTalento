@@ -25,12 +25,12 @@ def inicializar_sqlite():
                 'Snacks', 'Desayuno'
             )),
             precio REAL,
-            unidad TEXT,
+            unidad_medida TEXT,
             stock_minimo INTEGER,
-            stock_actual INTEGER,
+            stock_actual INTEGER DEFAULT 0,
             stock_maximo INTEGER,
             tiempo_reposicion INTEGER,
-            historial_ventas TEXT
+            historial_ventas TEXT DEFAULT '[]' 
         )
     ''')
 
@@ -39,14 +39,18 @@ def inicializar_sqlite():
         ventas_json = json.dumps(info.get('historial_ventas', []))
         
         cursor.execute('''
-            INSERT OR REPLACE INTO productos VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO productos (
+                nombre, categoria, precio, unidad_medida, 
+                stock_minimo, stock_actual, stock_maximo, 
+                tiempo_reposicion, historial_ventas
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             info['nombre'], 
             info['categoria'], 
             info['precio'],
-            info['unidad'], 
+            info.get('unidad_medida', info.get('unidad', 'unidad')),
             info['stock_minimo'], 
-            info.get('stock_actual', 0), # Añadido para coincidir con la imagen
+            info.get('stock_actual', 0),
             info['stock_maximo'],
             info['tiempo_reposicion'], 
             ventas_json
