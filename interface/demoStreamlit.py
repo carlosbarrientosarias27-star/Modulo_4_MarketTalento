@@ -50,16 +50,16 @@ with col_btn1:
             
             historial_raw = st.text_input("Historial de Ventas (ej: 10, 15)", value="[]", 
     disabled=True, help="El historial se iniciará vacío para productos nuevos.")
-            submit_button = st.form_submit_button("Guardar Producto")
+        submit_button = st.form_submit_button("Guardar Producto")
 
-            if submit_button:
+        if submit_button:
                 try:
                     historial_lista = [int(x.strip()) for x in historial_raw.split(",")]
                     st.success(f"✅ Producto **{nombre_nuevo}** guardado correctamente.")
                 except ValueError:
                     st.error("❌ El historial debe ser números separados por comas.")
 
-            if submit_button:
+        if submit_button:
                 if not nombre_nuevo:
                     st.error("❌ El nombre del producto es obligatorio.")
                 else:
