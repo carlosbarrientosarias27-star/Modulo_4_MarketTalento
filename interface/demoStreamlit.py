@@ -1,110 +1,129 @@
+import json 
 import sys
 import os
-import pandas as pd
-import streamlit as st
 
-# 1. CONFIGURACIÓN DE RUTAS Y PÁGINA
+# Adds the parent directory to the path so it can find 'services'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from services.database.product_db import product_database
+import streamlit as st
+import pandas as pd
+from services.database.db_reader import get_all_products 
 from services.vision.detector import detect_products
 from services.inventory.metrics import calculate_inventory_metrics 
 from services.inventory.valuation import calculate_inventory_value
+from services.inventory.recommender import generate_recommendations
 from services.prediction.stock_predictor import predict_stock_outage
 
-st.set_page_config(page_title="Smart Inventory Dashboard", layout="wide", page_icon="📦")
+# Configuración inicial de la página
+st.set_page_config(page_title='Markettalento Inventario', page_icon='📦', layout='wide')
+st.title('📦 Sistema de Inventario — Markettalento')
 
-# 2. ESTILOS PERSONALIZADOS
-st.markdown("""
-    <style>
-    .main { background-color: #f5f7f9; }
-    .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-    </style>
-    """, unsafe_allow_html=True)
+todos_los_productos = get_all_products()
 
-# 3. LÓGICA DE ESTADO (SESSION STATE)
-if 'scan_data' not in st.session_state:
-    st.session_state.scan_data = None
+# Disparador del análisis
+if st.button('🔍 Analizar Inventario'):
+    # 1. Procesamiento de datos mediante Visión Artificial
+    deteccion = detect_products()
+    productos = deteccion['productos']
 
-# 4. SIDEBAR - CONTROL DE ACCIONES
-with st.sidebar:
-    st.header("🎮 Panel de Control")
-    st.info("Simula el escaneo de una estantería o almacén usando Visión Artificial.")
+    # --- Sección A — Resultados del Análisis (Métricas) ---
+    # 1. Preparamos los datos de la DB para que la función no falle
+    # Añadimos una cantidad por defecto (ej. stock_maximo) para que pueda calcular
+    full_db_con_stock = []
+    for p in todos_los_productos: 
+        p_copia = p.copy()
+        # Si el producto fue detectado por la cámara, usamos esa cantidad
+        # Si no, usamos 0 o su stock_maximo para la métrica
+        p_copia['cantidad'] = p_copia.get('cantidad', p_copia.get('stock_maximo', 0))
+        full_db_con_stock.append(p_copia)
+        
+    # Calculamos las métricas antes de mostrarlas
+    metricas_full = calculate_inventory_metrics(full_db_con_stock, todos_los_productos)
+
+    # Extraemos el diccionario de resumen para facilitar el acceso
+    resumen = metricas_full['resumen']
+
+    col1, col2, col3, col4, col5= st.columns(5)
+    col1.metric('Productos Detectados', resumen['total_productos'])
+    col2.metric('Unidades Totales', resumen['total_unidades'])
+    col3.metric('Productos Críticos', resumen['productos_criticos'])
+    col4.metric('Stock Bajo', resumen['productos_bajos'])
+    col5.metric('Total DB', len(todos_los_productos))
+
+    st.markdown("---")
+
+# --- Sección B — Detalle del Análisis (Tabla) ---
+    st.subheader('📊 Detalle del Análisis')
+    filas = []
     
-    if st.button("🔍 Escanear Nuevo Escenario", use_container_width=True):
-        # Llamada al detector (que usa scenario_loader internamente)
-        resultado_deteccion = detect_products()
-        st.session_state.scan_data = resultado_deteccion
-        st.success(f"Escenario: {resultado_deteccion['descripcion']}")
+    # Mapeo para búsqueda rápida en la lista de SQLite
+    db_lookup = {p['nombre']: p for p in todos_los_productos}
 
-# 5. UI PRINCIPAL
-st.title("📦 Sistema de Inventario Inteligente")
-
-if st.session_state.scan_data:
-    escenario = st.session_state.scan_data
-    productos_detectados = escenario['productos']
-    
-    # --- PROCESAMIENTO DE DATOS ---
-    resumen_metricas = calculate_inventory_metrics(productos_detectados, product_database)
-    valor_total = calculate_inventory_value(productos_detectados, product_database)
-    
-    # --- SECCIÓN 1: KPIs ---
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Valor del Stock", f"{valor_total} €")
-    with col2:
-        st.metric("Total Productos", resumen_metricas['resumen']['total_productos'])
-    with col3:
-        st.metric("Alertas Críticas", resumen_metricas['resumen']['productos_criticos'], delta_color="inverse")
-    with col4:
-        st.metric("Escenario Actual", escenario['descripcion'][:15] + "...")
-
-    st.divider()
-
-    # --- SECCIÓN 2: TABLA DETALLADA ---
-    st.subheader("📋 Detalle del Inventario y Predicciones")
-    
-    tabla_data = []
-    for p in productos_detectados:
+    for p in productos:
+        # 1. Extraer nombre y stock detectado
         nombre = p['nombre']
         stock_actual = p['cantidad']
-        info_base = product_database.get(nombre, {})
+
+        # 2. Obtener info de la base de datos
+        info_producto = db_lookup.get(nombre, {}) 
+        stock_maximo = info_producto.get('stock_maximo', stock_actual)
+        sugerencia_cantidad = max(0, stock_maximo - stock_actual)
+    
+        # Si ya arreglaste db_reader.py, esto ya vendrá como lista
+        historial_ventas = info_producto.get('historial_ventas', [])
+
+        # 3. Llamar al predictor con los TRES argumentos
+        pred = predict_stock_outage(historial_ventas, stock_actual, info_producto)
         
-        # Obtener predicción
-        prediccion = predict_stock_outage(
-            info_base.get('historial_ventas', []), 
-            stock_actual
-        )
-        
-        tabla_data.append({
-            "Producto": nombre,
-            "Categoría": info_base.get('categoria', 'N/A'),
-            "Stock Actual": stock_actual,
-            "Mín. Requerido": info_base.get('stock_minimo', 0),
-            "Días Restantes": prediccion['dias_hasta_agotarse'],
-            "Estado": prediccion['estado'],
-            "Sugerencia Compra": prediccion['cantidad_recommendada'] if stock_actual < info_base.get('stock_minimo', 0) else 0
+        # ADD THIS LINE: Ensure the 'producto' key exists for the recommender
+        pred['producto'] = nombre
+        pred['stock_actual'] = stock_actual
+
+        # FIX: Define estado_pred here, inside the loop
+        estado_pred = pred.get('estado', 'Normal')
+
+        # 4. Generate recommendation safely
+        if estado_pred != 'Normal':
+                # Get the recommendation list
+                # Now [pred] contains the 'producto' key required by recommender.py
+                recommendations = generate_recommendations([pred])
+            
+                # Verify the list isn't empty and the key exists
+                if recommendations and len(recommendations) > 0:
+                    rec = recommendations[0].get('accion', 'Acción no definida')
+                else:
+                    rec = 'Sin recomendación disponible'
+        else:
+                rec = 'OK'
+
+        filas.append({
+                "Producto": nombre,
+                "Stock Actual": stock_actual,
+                "Estado": estado_pred,
+                "Días hasta Agotarse": pred.get('dias_hasta_agotarse', 'N/A'),
+                "Recomendación": rec, 
+                "Sugerencia Compra": sugerencia_cantidad
         })
-    
-    df = pd.DataFrame(tabla_data)
-    
-    # Aplicar color a la tabla
-    def color_estado(val):
-        if "CRÍTICO" in str(val) or "AGOTADO" in str(val): return 'background-color: #ffcccc'
-        if "BAJO" in str(val): return 'background-color: #fff4cc'
-        if "ADEQUADO" in str(val): return 'background-color: #ccffcc'
-        return ''
 
-    st.dataframe(df.style.applymap(color_estado, subset=['Estado']), use_container_width=True)
+        df = pd.DataFrame(filas)
+        st.dataframe(df, use_container_width=True)
+        st.markdown("---")
 
-    # --- SECCIÓN 3: RECOMENDACIONES ---
-    with st.expander("💡 Recomendaciones de Reposición"):
-        for rec in resumen_metricas['recomendaciones']:
-            st.write(f"• {rec}")
+# --- Sección C — Recomendaciones y Valor del Inventario ---
+    col_rec, col_val = st.columns(2)
 
-else:
-    st.warning("⚠️ No hay datos de escaneo. Presiona el botón 'Escanear' en el menú lateral para comenzar.")
-    
-    # Mostrar catálogo base si no hay escaneo
-    with st.expander("Ver Catálogo de Productos"):
-        st.json(product_database)
+    with col_rec:
+        st.subheader('🚨 Recomendaciones de Reposición')
+        alertas = df[df["Estado"].str.upper().isin(["CRÍTICO", "BAJO"])]
+        
+        if not alertas.empty:
+            for _, row in alertas.iterrows():
+                color = "red" if row["Estado"] == "Crítico" else "orange"
+                st.markdown(f":{color}[**{row['Producto']}**]: {row['Recomendación']}")
+        else:
+            st.success("Inventario optimizado. No se requieren acciones inmediatas.")
+
+    with col_val:
+        st.subheader('💰 Valor del Inventario')
+        valor = calculate_inventory_value(productos, todos_los_productos)
+        st.metric('Valor Total estimado', f'{valor:.2f} €')

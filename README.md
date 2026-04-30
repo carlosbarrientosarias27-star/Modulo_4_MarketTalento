@@ -25,8 +25,7 @@ MODULO_4_MARKETTALENTO/
 │   ├── EndPoint_Api.py
 │   └── InventarioAlfa.py
 ├── interface/                      # Interfaces Streamlit
-│   ├── demoStreamlit.py
-│   └── demoStreamlitV1.py
+│   └── demoStreamlit.py
 ├── Memoria Final/
 │   └── Memoria Final.md
 ├── routes/                         # Rutas de la API
@@ -136,7 +135,7 @@ MODULO_4_MARKETTALENTO/
 python app.py
 ```
 
-La API estará disponible en `http://localhost:8000`.
+La API estará disponible en `http://localhost:5020`.
 
 ### Iniciar la interfaz Streamlit
 
