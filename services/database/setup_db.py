@@ -27,7 +27,7 @@ def inicializar_sqlite():
             precio REAL,
             unidad_medida TEXT,
             stock_minimo INTEGER,
-            stock_actual INTEGER DEFAULT 0,
+            stock_inicial INTEGER DEFAULT 0,
             stock_maximo INTEGER,
             tiempo_reposicion INTEGER,
             historial_ventas TEXT DEFAULT '[]' 
@@ -41,7 +41,7 @@ def inicializar_sqlite():
         cursor.execute('''
             INSERT OR REPLACE INTO productos (
                 nombre, categoria, precio, unidad_medida, 
-                stock_minimo, stock_actual, stock_maximo, 
+                stock_minimo, stock_inicial, stock_maximo, 
                 tiempo_reposicion, historial_ventas
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
@@ -50,7 +50,7 @@ def inicializar_sqlite():
             info['precio'],
             info.get('unidad_medida', info.get('unidad', 'unidad')),
             info['stock_minimo'], 
-            info.get('stock_actual', 0),
+            info.get('actual', info.get('stock_inicial', 0)), 
             info['stock_maximo'],
             info['tiempo_reposicion'], 
             ventas_json

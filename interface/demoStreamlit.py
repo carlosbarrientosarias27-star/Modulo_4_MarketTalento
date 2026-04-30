@@ -26,61 +26,63 @@ col_btn1, col_btn2 = st.columns([1, 1])
 
 with col_btn1:
     # --- BOTÓN PARA AÑADIR PRODUCTOS (IZQUIERDA) ---
+    if 'mostrar_formulario' not in st.session_state:
+        st.session_state.mostrar_formulario = False
+
     if st.button('➕ Productos', use_container_width=False):
+        st.session_state.mostrar_formulario = True
+    if st.session_state.mostrar_formulario:    
         st.subheader("📦 Registro de Nuevo Producto")
+        
+        # 1. Inicia el formulario
         with st.form("nuevo_producto_form", clear_on_submit=True):
             col_a, col_b = st.columns(2)
             with col_a:
-                id_prod = st.text_input("ID / SKU del Producto", value="AUTO-GENERADO", 
-                                        disabled=True)
+                st.text_input("ID / SKU", value="AUTO-GENERADO", disabled=True)
                 nombre_nuevo = st.text_input("Nombre completo")
+                
+                # Lista ajustada para evitar errores de la base de datos[cite: 1, 2]
                 lista_categorias = [
                     "Refrigerados (Frío)", "Conservas", "Bebidas", 
                     "Panadería", "Despensa", "Alimentos Básicos", 
-                    "Snacks", "Desayuno", "Otros"
+                    "Snacks", "Desayuno" , "Otros"
                 ]
                 categoria = st.selectbox("Categoría", lista_categorias)
                 precio = st.number_input("Precio de Venta (€)", min_value=0.0, format="%.2f")
                 unidad_medida = st.text_input("Unidad de medida", placeholder="Ej: kg, Litros, Pack")
+            
             with col_b:
-                stock_actual = st.number_input("Stock Actual", value=0, disabled=True)
+                stock_inicial = st.number_input("Stock Inicial", min_value=0, disabled=True)
                 stock_minimo_n = st.number_input("Stock Mínimo", min_value=0, step=1)
                 stock_maximo_n = st.number_input("Stock Máximo", min_value=0, step=1)
                 t_reposicion_n = st.number_input("Tiempo de Reposición (Días)", min_value=1, step=1)
             
-            historial_raw = st.text_input("Historial de Ventas (ej: 10, 15)", value="[]", 
-    disabled=True, help="El historial se iniciará vacío para productos nuevos.")
-        submit_button = st.form_submit_button("Guardar Producto")
+            # 2. EL BOTÓN DEBE ESTAR AQUÍ (DENTRO DEL FORM)
+            submit_button = st.form_submit_button("Guardar Producto")
 
-        if submit_button:
-                try:
-                    historial_lista = [int(x.strip()) for x in historial_raw.split(",")]
-                    st.success(f"✅ Producto **{nombre_nuevo}** guardado correctamente.")
-                except ValueError:
-                    st.error("❌ El historial debe ser números separados por comas.")
-
-        if submit_button:
+            # 3. LA LÓGICA DE GUARDADO TAMBIÉN DENTRO DEL FORM
+            if submit_button:
                 if not nombre_nuevo:
                     st.error("❌ El nombre del producto es obligatorio.")
                 else:
-                    # 1. Empaquetamos los datos para la función de base de datos
                     datos = {
                         'nombre': nombre_nuevo,
                         'categoria': categoria,
                         'precio': precio,
                         'unidad': unidad_medida,
                         'min': stock_minimo_n,
-                        'actual': stock_actual,
+                        'inicial': stock_inicial,
                         'max': stock_maximo_n,
                         'reposicion': t_reposicion_n
                     }
                     
-                    # 2. Llamamos a la función que creamos en database_manager.py
+                    # Llamamos a la función de database_manager.py
                     if guardar_producto_nuevo(datos):
-                        st.success(f"✅ Producto **{nombre_nuevo}** guardado en inventario.db")
-                        st.rerun() 
+                        st.success(f"✅ ¡{nombre_nuevo} guardado con éxito!")
+                        st.session_state.mostrar_formulario = False
+                        st.rerun()  # Recarga para que aparezca en el inventario[cite: 3, 5]
                     else:
-                        st.error("❌ Error al intentar guardar en la base de datos. Verifica la conexión.")
+                        st.error("❌ Error al guardar. Revisa que la categoría sea correcta.")
                         
 
 with col_btn2:

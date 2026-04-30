@@ -19,7 +19,7 @@ def guardar_producto_nuevo(datos_producto):
         cursor.execute('''
             INSERT INTO productos (
                 nombre, categoria, precio, unidad_medida, 
-                stock_minimo, stock_actual, stock_maximo, tiempo_reposicion
+                stock_minimo, stock_inicial, stock_maximo, tiempo_reposicion
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
             datos_producto['nombre'], 
@@ -27,7 +27,7 @@ def guardar_producto_nuevo(datos_producto):
             datos_producto['precio'],
             datos_producto['unidad'],
             datos_producto['min'],
-            datos_producto['actual'],
+            datos_producto['inicial'],
             datos_producto['max'],
             datos_producto['reposicion']
         ))
