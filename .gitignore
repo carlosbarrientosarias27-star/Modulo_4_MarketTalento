@@ -1,4 +1,4 @@
-# Bases de datos (usa el nombre exacto que sale en tu VS Code)
+# Bases de datos
 services/database/inventario.db
 
 # Python y Cache

@@ -20,11 +20,15 @@ st.title('📦 Sistema de Inventario — Markettalento')
 
 todos_los_productos = get_all_products()
 
+# Creamos las columnas para que los botones estén alineados horizontalmente
+col_btn1, col_btn2 = st.columns([1, 1])
+
+with col_btn1:
 # Disparador del análisis
-if st.button('🔍 Analizar Inventario'):
+    if st.button('🔍 Analizar Inventario'):
     # 1. Procesamiento de datos mediante Visión Artificial
-    deteccion = detect_products()
-    productos = deteccion['productos']
+        deteccion = detect_products()
+        productos = deteccion['productos']
 
     # --- Sección A — Resultados del Análisis (Métricas) ---
     # 1. Preparamos los datos de la DB para que la función no falle
@@ -127,3 +131,59 @@ if st.button('🔍 Analizar Inventario'):
         st.subheader('💰 Valor del Inventario')
         valor = calculate_inventory_value(productos, todos_los_productos)
         st.metric('Valor Total estimado', f'{valor:.2f} €')
+
+with col_btn2:
+    # El nuevo botón para productos
+    if st.button('➕ Productos', use_container_width=True):
+        st.subheader("📦 Registro de Nuevo Producto")
+        
+        # Usamos un formulario para que no se recargue la página por cada letra escrita
+        with st.form("nuevo_producto_form", clear_on_submit=True):
+            col_a, col_b = st.columns(2)
+            
+            with col_a:
+                id_prod = st.text_input("ID / SKU del Producto")
+                nombre = st.text_input("Nombre completo")
+                categoria = st.selectbox("Categoría", ["Electrónica", "Alimentos", "Limpieza", "Ferretería", "Otros"])
+                precio = st.number_input("Precio de Venta (€)", min_value=0.0, format="%.2f")
+                unidad = st.text_input("Unidad de medida", value="unidad")
+
+            with col_b:
+                stock_actual = st.number_input("Stock Actual", min_value=0, step=1)
+                stock_minimo = st.number_input("Stock Mínimo (Alerta)", min_value=0, step=1)
+                stock_maximo = st.number_input("Stock Máximo (Capacidad)", min_value=0, step=1)
+                tiempo_reposicion = st.number_input("Tiempo de Reposición (Días)", min_value=1, step=1)
+            
+            # El historial de ventas suele ser una lista de números. 
+            # Aquí lo pedimos como texto separado por comas para procesarlo.
+            historial_ventas_raw = st.text_input("Historial de Ventas (ej: 10, 15, 8, 20)", value="0")
+
+            # Botón de envío del formulario
+            submit_button = st.form_submit_button("Guardar Producto en Inventario")
+
+            if submit_button:
+                # Procesamos el historial de ventas para que sea una lista de enteros
+                try:
+                    historial_lista = [int(x.strip()) for x in historial_ventas_raw.split(",")]
+                    
+                    # AQUÍ ES DONDE DEBES GUARDAR LOS DATOS (en tu DB o lista)
+                    # Ejemplo de estructura de datos:
+                    nuevo_p = {
+                        "id": id_prod,
+                        "nombre": nombre,
+                        "categoria": categoria,
+                        "precio": precio,
+                        "unidad": unidad,
+                        "stock_minimo": stock_minimo,
+                        "stock_actual": stock_actual,
+                        "stock_maximo": stock_maximo,
+                        "tiempo_reposicion": tiempo_reposicion,
+                        "historial_ventas": historial_lista
+                    }
+                    
+                    # Simulación de guardado
+                    st.success(f"✅ ¡Éxito! El producto **{nombre}** ha sido añadido al inventario.")
+                    # st.balloons() # Opcional: un toque de alegría
+                    
+                except ValueError:
+                    st.error("❌ Error en el historial de ventas. Asegúrate de usar números separados por comas.")      
