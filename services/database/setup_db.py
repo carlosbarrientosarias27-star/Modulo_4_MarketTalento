@@ -7,7 +7,7 @@ def inicializar_sqlite():
     BASE_DIR = os.path.dirname(__file__)
     # Usamos abspath para normalizar la ruta final
     db_path = os.path.abspath(os.path.join(BASE_DIR, '..', '..', 'data', 'inventario.db'))
-    
+
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
 
@@ -17,7 +17,7 @@ def inicializar_sqlite():
     # 2. CREAR LA TABLA CON LA NUEVA ESTRUCTURA
     cursor.execute ('''
         CREATE TABLE productos (
-            id TEXT PRIMARY KEY,
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             nombre TEXT NOT NULL,
             categoria TEXT CHECK(categoria IN (
                 'Refrigerados', 'Conservas', 'Bebidas', 
@@ -39,9 +39,8 @@ def inicializar_sqlite():
         ventas_json = json.dumps(info.get('historial_ventas', []))
         
         cursor.execute('''
-            INSERT OR REPLACE INTO productos VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT OR REPLACE INTO productos VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         ''', (
-            info['id'], 
             info['nombre'], 
             info['categoria'], 
             info['precio'],

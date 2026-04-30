@@ -30,7 +30,8 @@ with col_btn1:
         with st.form("nuevo_producto_form", clear_on_submit=True):
             col_a, col_b = st.columns(2)
             with col_a:
-                id_prod = st.text_input("ID / SKU del Producto")
+                id_prod = st.text_input("ID / SKU del Producto", value="AUTO-GENERADO", 
+                                        disabled=True)
                 nombre_nuevo = st.text_input("Nombre completo")
                 lista_categorias = [
                     "Refrigerados (Frío)", "Conservas", "Bebidas", 
