@@ -88,22 +88,29 @@ with col_btn1:
 with col_btn2:
     # --- BOTÓN DE ANÁLISIS (DERECHA) ---
     if st.button('🔍 Analizar Inventario', use_container_width=False):
-        # 1. Procesamiento
+        # 1. Procesamiento de detección (Cámara)
         deteccion = detect_products()
-        productos = deteccion['productos']
+        lista_detectados = deteccion.get('productos', [])
+        
+        # 2. PREPARACIÓN DE DATOS PARA EVITAR EL KEYERROR
+        # Creamos una versión de la DB donde 'cantidad' sea el stock guardado
+        # o lo que la cámara detectó en ese momento.
+        full_db_con_cantidad = []
+        detectados_dict = {p['nombre']: p.get('cantidad', 0) for p in lista_detectados}
 
-        # --- Sección A — Resultados (Métricas) ---
-        full_db_con_stock = []
-        for p in todos_los_productos: 
+        for p in todos_los_productos:
             p_copia = p.copy()
-            p_copia['cantidad'] = p_copia.get('cantidad', p_copia.get('stock_maximo', 0))
-            full_db_con_stock.append(p_copia)
-            
-        metricas_full = calculate_inventory_metrics(full_db_con_stock, todos_los_productos)
+            # Si la cámara lo vio, usamos esa cantidad; si no, 0 o su stock inicial
+            p_copia['cantidad'] = detectados_dict.get(p['nombre'], 0)
+            full_db_con_cantidad.append(p_copia)
+
+        # 3. LLAMADA A MÉTRICAS (Ahora ya llevan la clave 'cantidad')
+        metricas_full = calculate_inventory_metrics(full_db_con_cantidad, todos_los_productos)
         resumen = metricas_full['resumen']
 
+        # --- Sección A — Métricas Visuales ---
         m1, m2, m3, m4, m5 = st.columns(5)
-        m1.metric('Detectados', resumen['total_productos'])
+        m1.metric('Detectados', len(lista_detectados))
         m2.metric('Unidades', resumen['total_unidades'])
         m3.metric('Críticos', resumen['productos_criticos'])
         m4.metric('Stock Bajo', resumen['productos_bajos'])
@@ -111,29 +118,28 @@ with col_btn2:
 
         st.markdown("---")
 
-        # --- Sección B — Detalle del Análisis (Tabla) ---
+        # --- Sección B — Detalle del Análisis (Los 28 productos) ---
         st.subheader('📊 Detalle del Análisis')
         filas = []
-        db_lookup = {p['nombre']: p for p in todos_los_productos}
 
-        for p in productos:
-            nombre = p['nombre']
-            stock_det = p['cantidad']
-            info_p = db_lookup.get(nombre, {}) 
-            stock_max = info_p.get('stock_maximo', stock_det)
+        for info_p in full_db_con_cantidad:
+            nombre = info_p['nombre']
+            stock_det = info_p['cantidad'] # Ya está definida arriba
+            
+            stock_max = info_p.get('stock_maximo', 0)
             sug_compra = max(0, stock_max - stock_det)
             h_ventas = info_p.get('historial_ventas', [])
 
+            # Predicción y Recomendación
             pred = predict_stock_outage(h_ventas, stock_det, info_p)
             pred['producto'] = nombre
             pred['stock_actual'] = stock_det
             est_pred = pred.get('estado', 'Normal')
 
+            rec_text = 'OK'
             if est_pred != 'Normal':
                 recs = generate_recommendations([pred])
                 rec_text = recs[0].get('accion', 'Revisar') if recs else 'Sin datos'
-            else:
-                rec_text = 'OK'
 
             filas.append({
                 "Producto": nombre,
@@ -144,24 +150,27 @@ with col_btn2:
                 "Sugerencia Compra": sug_compra
             })
 
+        # Mostrar los 28 productos en la tabla
         df = pd.DataFrame(filas)
         st.dataframe(df, use_container_width=True)
 
-        # --- Sección C — Recomendaciones y Valor ---
+# --- SECCIÓN C — RECOMENDACIONES Y VALOR (¡AHORA DENTRO DEL IF!) ---
         st.markdown("---")
         col_rec, col_val = st.columns(2)
 
         with col_rec:
             st.subheader('🚨 Recomendaciones')
+            # Aquí 'df' ya existe porque estamos dentro del botón
             alertas = df[df["Estado"].str.upper().isin(["CRÍTICO", "BAJO"])]
             if not alertas.empty:
                 for _, row in alertas.iterrows():
-                    color = "red" if row["Estado"] == "Crítico" else "orange"
+                    color = "red" if row["Estado"].upper() == "CRÍTICO" else "orange"
                     st.markdown(f":{color}[**{row['Producto']}**]: {row['Recomendación']}")
             else:
                 st.success("Inventario optimizado.")
 
         with col_val:
             st.subheader('💰 Valor del Inventario')
-            valor_total = calculate_inventory_value(productos, todos_los_productos)
+            # Calculamos el valor usando los 28 productos
+            valor_total = calculate_inventory_value(lista_detectados, todos_los_productos)
             st.metric('Valor Total estimado', f'{valor_total:.2f} €')
