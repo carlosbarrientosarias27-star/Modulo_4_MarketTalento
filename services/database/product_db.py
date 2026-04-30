@@ -45,7 +45,7 @@ product_database = {
         "historial_ventas": [2, 3, 2, 4, 3, 2, 3, 4, 2, 3, 4, 2, 3, 2, 4, 3, 2, 3, 2, 4]
     },
 
-    # --- CATEGORÍA: CONSERVAS ---
+    # --- CATEGORÍA: Conservas ---
     "Atún en Aceite": {
         "id": "PROD008", "nombre": "Atún en Aceite", "categoria": "Conservas",
         "precio": 1.60, "unidad": "lata", "stock_minimo": 10,

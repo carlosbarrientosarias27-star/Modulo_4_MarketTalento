@@ -3,7 +3,9 @@ import sqlite3
 import os
 import json
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'inventario.db')
+# Actualizamos la ruta para que apunte a la carpeta 'data' en la raíz
+BASE_DIR = os.path.dirname(__file__)
+DB_PATH = os.path.abspath(os.path.join(BASE_DIR, '..', '..', 'data', 'inventario.db'))
 
 def get_sales_history(product_name):
     """Obtiene el historial de ventas desde SQLite."""

@@ -1,5 +1,5 @@
 # Bases de datos
-services/database/inventario.db
+data/inventario.db
 
 # Python y Cache
 __pycache__/

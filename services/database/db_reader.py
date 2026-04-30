@@ -3,7 +3,10 @@ import sqlite3
 import json
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'inventario.db')
+# Cambiamos la ruta para que suba dos niveles (desde services/database) 
+# y entre en la carpeta 'data'
+BASE_DIR = os.path.dirname(__file__)
+DB_PATH = os.path.abspath(os.path.join(BASE_DIR, '..', '..', 'data', 'inventario.db'))
 
 def get_all_products():
     conn = sqlite3.connect(DB_PATH)

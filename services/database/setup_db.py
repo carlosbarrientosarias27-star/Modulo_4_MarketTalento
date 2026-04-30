@@ -4,8 +4,9 @@ import json
 from product_db import product_database
 
 def inicializar_sqlite():
-    # Definir ruta relativa al archivo actual
-    db_path = os.path.join(os.path.dirname(__file__), 'inventario.db')
+    BASE_DIR = os.path.dirname(__file__)
+    # Usamos abspath para normalizar la ruta final
+    db_path = os.path.abspath(os.path.join(BASE_DIR, '..', '..', 'data', 'inventario.db'))
     
     conn = sqlite3.connect(db_path)
     cursor = conn.cursor()
